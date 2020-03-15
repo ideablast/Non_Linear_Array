@@ -1,4 +1,5 @@
 #include"ALL.h"
+extern Stack *top;
 
 void Insert(int **tree, int item)
 {
@@ -50,66 +51,137 @@ void Delete(int **tree, int item)
 {
 	int search_idx;
 	int size_check = _msize(*tree) / sizeof(int);
-	
+	//스택이나 배열로 역순으로 다시 영으로 지운 칸을 채워줌
 
 	for (search_idx = 0; search_idx < size_check; search_idx++)
 	{
 		if ((*tree)[search_idx] == item)
 		{
-			(*tree)[search_idx] = 0;//지울 노드 기준
-			while (1)
-			{
-				//인덱스가 메모리 영역을 벗어나는지 확인도 필요할 듯
-				//이점을 break point로 할지 
-				search_idx = search_idx * 2 + 1;//큰쪽
-				if ((*tree)[search_idx] != 0)//노드에 숫자가 있으면
-				{
-					Push_stack((*tree)[search_idx]);
-					(*tree)[search_idx] = 0;
-				}
-				else//노드에 숫자가 없으면
-				{
-					search_idx = search_idx - 1;//작은쪽
-					if ((*tree)[search_idx] != 0)
-					{
-						Push_stack((*tree)[search_idx]);
-						(*tree)[search_idx] = 0;
-					}
-					else
-					{
-						//이점을 break point로 할지 생각해봐야 할듯
-					}
-					
-				}
-
-				if (search_idx >= size_check)
-					break;
-			}
-			
+			(*tree)[search_idx] = 0;
+			break;
 		}
 	}
-	
-}
-#ifdef NOTYET
 
-(*tree)[search_idx] = 0;
-search_idx = search_idx * 2 + 1;
-if ((*tree)[search_idx] != 0)
-{
-	(*tree)[search_idx / 2] = (*tree)[search_idx];
-	(*tree)[search_idx] = 0;
-}
-else
-{
-	search_idx = search_idx * 2;
-	if ((*tree)[search_idx] != 0)
+	while (1)
 	{
-
+		search_idx = search_idx * 2 + 1;//큰쪽
+		if (search_idx >= size_check)
+		{
+			search_idx = search_idx / 2;
+			break;
+		}
+			
+		if ((*tree)[search_idx] != 0)//노드에 숫자가 있으면
+		{
+			Push_stack((*tree)[search_idx]);
+			(*tree)[search_idx] = 0;
+		}
+		else//노드에 숫자가 없으면
+		{
+			search_idx = search_idx - 1;//작은쪽
+			if ((*tree)[search_idx] != 0)
+			{
+				Push_stack((*tree)[search_idx]);
+				(*tree)[search_idx] = 0;
+			}
+			else
+			{
+				break;
+			}
+		}
 	}
+
+	while (IsEmpty() != TRUE)
+	{
+		search_idx = search_idx / 2;
+		(*tree)[search_idx] = Pop_stack();
+	}
+	Delete_Level_New_Ver(tree);
 }
 
-break;
-#endif
+
+void Delete_Level(int **tree)
+{
+	int size_check = _msize(*tree) / sizeof(int);
+
+	int max_level;
+	int search_idx;
+	int search_idx_start;
+	int search_idx_end;
+	int *free_mem;
+	int free_flag = TRUE;
+
+	max_level = (int)LogB(2.0, size_check);
+	search_idx_start = (int)pow(2.0, max_level - 1);
+	search_idx_end = (int)pow(2.0, max_level)-1;
+	free_mem = (*tree) + search_idx_start;
+
+	for (search_idx = search_idx_start; search_idx < search_idx_end; search_idx++)
+	{
+		if ((*tree)[search_idx] != 0)
+			free_flag = FALSE;
+	}
+
+	if (free_flag == TRUE)
+		free(free_mem);
+}
+
+void Delete_Level_New_Ver(int **tree)
+{
+	int size_check = _msize(*tree) / sizeof(int);
+	int re_size = size_check / 2;
+	int max_level;
+	int search_idx;
+	int search_idx_start;
+	int search_idx_end;
+	int *free_mem;
+	int free_flag = TRUE;
+
+	max_level = (int)LogB(2.0, size_check);
+	search_idx_start = (int)pow(2.0, max_level - 1);
+	search_idx_end = (int)pow(2.0, max_level) - 1;
+	free_mem = (*tree) + search_idx_start;
+
+	for (search_idx = search_idx_start; search_idx < search_idx_end; search_idx++)
+	{
+		if ((*tree)[search_idx] != 0)
+			free_flag = FALSE;
+	}
+
+	if (free_flag == TRUE)
+		(*tree) = (int*)realloc((*tree), re_size * sizeof(int));
+}
+
+void Print_Tree(int *tree)
+{
+	int idx;
+	int num_of_ary;
+	int new_line_idx = 2;
+	int cnt = 1;
+	num_of_ary = _msize(tree) / sizeof(int);
+
+	puts("---------------------------------------");
+	for (idx = 0; idx < num_of_ary; idx++)
+	{
+		
+		if (idx != 0)
+		{
+			printf("%2d ", tree[idx]);
+			cnt++;
+		}
+		else
+			printf("Level %2d: ", (int)LogB(2.0, (double)cnt)+1);
+
+		if (cnt == new_line_idx)
+		{
+			puts("");
+			if (idx != num_of_ary - 1)
+				printf("Level %2d: ", (int)LogB(2.0, (double)cnt) + 1);
+			new_line_idx = new_line_idx * 2;
+		}
+	}
+	puts("---------------------------------------");
+}
 
 
 int *rand_num()
@@ -132,14 +204,14 @@ int *rand_num()
 				{
 					check_flag = FALSE;
 					break;
-				}		
+				}
 			}
 			if (check_flag == TRUE)
 				break;
 		}
 		rand_integer[idx] = int_temp;
 	}
-	
+
 	return rand_integer;
 }
 
@@ -171,5 +243,36 @@ int *rand_num_new_ver()
 
 	return selected_integer;
 }
+
+
+/*SIMPLE_MATH*/
+double LogB(double base, double x)
+{
+	return log(x) / log(base);
+}
+
+
+
+#ifdef NOTYET
+
+(*tree)[search_idx] = 0;
+search_idx = search_idx * 2 + 1;
+if ((*tree)[search_idx] != 0)
+{
+	(*tree)[search_idx / 2] = (*tree)[search_idx];
+	(*tree)[search_idx] = 0;
+}
+else
+{
+	search_idx = search_idx * 2;
+	if ((*tree)[search_idx] != 0)
+	{
+
+	}
+}
+
+break;
+#endif
+
 
 
